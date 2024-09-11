@@ -1,6 +1,9 @@
 from cli.abstract_command import AbstractCommand
 import os
 import nimblephysics as nimble
+from detectors.abstract_detector import AbstractDetector
+from detectors.foot_stillness import FootStillnessDetector
+import numpy as np
 
 
 class EvaluatePerformance(AbstractCommand):
@@ -19,6 +22,8 @@ class EvaluatePerformance(AbstractCommand):
         method: str = args.method
         print(f"Running evaluation on {dataset_home} using method {method}")
 
+        detector = AbstractDetector()
+
         data_dir = os.path.abspath('../data/processed')
 
         # Recursively list all the B3D files under data
@@ -35,10 +40,23 @@ class EvaluatePerformance(AbstractCommand):
 
         num_missing_frames = 0
         num_not_missing_frames = 0
+
+        true_positives = 0
+        false_positives = 0
+        true_negatives = 0
+        false_negatives = 0
+
+        true_segment_lengths = []
+        predicted_segment_lengths = []
+
         for file in b3d_files:
             print("Loading: " + file)
             try:
                 subject: nimble.biomechanics.SubjectOnDisk = nimble.biomechanics.SubjectOnDisk(file)
+
+                reviewed_trials = []
+                reviewed_trial_missing = []
+
                 for trial in range(subject.getNumTrials()):
                     missing_reasons = subject.getMissingGRF(trial)
                     manual_review_count = [reason == nimble.biomechanics.MissingGRFReason.manualReview for reason in missing_reasons].count(True)
@@ -49,6 +67,53 @@ class EvaluatePerformance(AbstractCommand):
                         num_trials_manually_reviewed += 1
                         num_missing_frames += manual_review_count
                         num_not_missing_frames += not_missing_count
+                        reviewed_trials.append(trial)
+                        reviewed_trial_missing.append([reason != nimble.biomechanics.MissingGRFReason.notMissingGRF for reason in missing_reasons])
+
+                # Run the detector
+                estimated_missing = detector.estimate_missing_grfs(subject, reviewed_trials)
+
+                for i in range(len(reviewed_trials)):
+                    for j in range(len(estimated_missing[i])):
+                        if estimated_missing[i][j]:
+                            if reviewed_trial_missing[i][j]:
+                                true_positives += 1
+                            else:
+                                false_positives += 1
+                        else:
+                            if reviewed_trial_missing[i][j]:
+                                false_negatives += 1
+                            else:
+                                true_negatives += 1
+
+                # Get the lengths of segments of present GRFs
+                for i in range(len(reviewed_trials)):
+                    start = -1
+                    for j in range(len(reviewed_trial_missing[i])):
+                        if not reviewed_trial_missing[i][j]:
+                            if start == -1:
+                                start = j
+                        else:
+                            if start != -1:
+                                true_segment_lengths.append(j - start)
+                                start = -1
+                    if start != -1:
+                        true_segment_lengths.append(len(reviewed_trial_missing[i]) - start)
+
+                # Get the lengths of segments of predicted missing GRFs
+                for i in range(len(reviewed_trials)):
+                    start = -1
+                    for j in range(len(estimated_missing[i])):
+                        if not estimated_missing[i][j]:
+                            if start == -1:
+                                start = j
+                        else:
+                            if start != -1:
+                                predicted_segment_lengths.append(j - start)
+                                start = -1
+                    if start != -1:
+                        predicted_segment_lengths.append(len(estimated_missing[i]) - start)
+
             except Exception as e:
                 print("Error loading: " + file)
                 print(e)
@@ -58,3 +123,45 @@ class EvaluatePerformance(AbstractCommand):
         print("Num trials not manually reviewed: " + str(num_trials_not_manually_reviewed))
         print("Num missing frames: " + str(num_missing_frames))
         print("Num not missing frames: " + str(num_not_missing_frames))
+
+        print('-----')
+
+        print("True Positives (was missing GRF, we predicted it): " + str(true_positives))
+        print("False Positives (had GRF, we predicted it was missing): " + str(false_positives))
+        print("True Negatives (had GRF, we knew it did): " + str(true_negatives))
+        print("False Negatives (had GRF, we predicted it was missing): " + str(false_negatives))
+
+        print('-----')
+
+        if true_positives + false_positives == 0:
+            print("Never predicted a missing GRF! No true positives or false positives.")
+            precision = 0
+        else:
+            precision = true_positives / (true_positives + false_positives)
+
+        if true_positives + false_negatives == 0:
+            print("Never found a labeled missing GRF! No labeled missing frames in the dataset.")
+            recall = 0
+        else:
+            recall = true_positives / (true_positives + false_negatives)
+
+        if precision + recall == 0:
+            f1 = 0
+        else:
+            f1 = 2 * precision * recall / (precision + recall)
+        print("Precision (of our thrown out data, how much of it should have been thrown out?): " + str(precision))
+        print("Recall (how much of the bad data did we throw out?): " + str(recall))
+        print("F1: " + str(f1))
+
+        print('-----')
+
+        if len(true_segment_lengths) == 0:
+            print('No segments of usable GRFs in the dataset.')
+        elif len(predicted_segment_lengths) == 0:
+            print('No segments of usable GRFs predicted, so we have no stats on usable GRF segment lengths.')
+        else:
+            print('Predicted number of usable segments: ' + str(len(predicted_segment_lengths))+ ' compared to true value ' + str(len(true_segment_lengths)))
+            print('Predicted segment median length: ' + str(np.median(predicted_segment_lengths)) + ' compared to true value ' + str(np.median(true_segment_lengths)))
+            print('Predicted segment mean length: ' + str(np.mean(predicted_segment_lengths)) + ' compared to true value ' + str(np.mean(true_segment_lengths)))
+            print('Predicted segment max length: ' + str(np.max(predicted_segment_lengths)) + ' compared to true value ' + str(np.max(true_segment_lengths)))
+            print('Predicted segment min length: ' + str(np.min(predicted_segment_lengths)) + ' compared to true value ' + str(np.min(true_segment_lengths)))
