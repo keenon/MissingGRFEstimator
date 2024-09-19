@@ -2,8 +2,10 @@ from cli.abstract_command import AbstractCommand
 import os
 import nimblephysics as nimble
 from detectors.abstract_detector import AbstractDetector
-from detectors.foot_stillness import FootStillnessDetector
+from detectors.thresholds import ThresholdsDetector
+from detectors.zero_grf import ZeroGRFDetector
 import numpy as np
+import random
 
 
 class EvaluatePerformance(AbstractCommand):
@@ -13,16 +15,21 @@ class EvaluatePerformance(AbstractCommand):
     def register_subcommand(self, subparsers):
         subparser = subparsers.add_parser('eval', help='Evaluate the performance of a missing GRF heuristic on the dataset.')
         subparser.add_argument('--dataset-home', type=str, default='../data', help='The path to the AddBiomechanics dataset.')
-        subparser.add_argument('--method', type=str, default='foot-stillness', help='The method to evaluate.')
+        subparser.add_argument('--method', type=str, default='threshold', help='The method to evaluate.')
+        subparser.add_argument('--foot-marker-file', type=str, default='../foot_marker_file.json', help='The JSON file containing the locations of the markers on the foot.')
+        subparser.add_argument('--log-csv', type=str, default='../eval.csv', help='The file to log output to.')
 
     def run(self, args):
         if 'command' in args and args.command != 'eval':
             return False
         dataset_home: str = args.dataset_home
         method: str = args.method
+        foot_marker_file: str = args.foot_marker_file
         print(f"Running evaluation on {dataset_home} using method {method}")
 
         detector = AbstractDetector()
+        if method == 'threshold':
+            detector = ThresholdsDetector(foot_marker_file)
 
         data_dir = os.path.abspath('../data/processed')
 
@@ -31,7 +38,11 @@ class EvaluatePerformance(AbstractCommand):
         for root, dirs, files in os.walk(data_dir):
             for file in files:
                 if file.endswith(".b3d"):
-                    b3d_files.append(os.path.join(root, file))
+                    path = os.path.join(root, file)
+                    # if 'Camargo' in path:
+                    b3d_files.append(path)
+        # random.shuffle(b3d_files)
+        # b3d_files = b3d_files[:30]
 
         # Load all the B3D files, and collect statistics for each trial
 
@@ -48,6 +59,12 @@ class EvaluatePerformance(AbstractCommand):
 
         true_segment_lengths = []
         predicted_segment_lengths = []
+
+        trials_by_recall = {}
+        trials_by_precision = {}
+        trials_by_f1 = {}
+        trials_by_false_negatives = {}
+        trials_by_false_positives = {}
 
         for file in b3d_files:
             print("Loading: " + file)
@@ -74,17 +91,43 @@ class EvaluatePerformance(AbstractCommand):
                 estimated_missing = detector.estimate_missing_grfs(subject, reviewed_trials)
 
                 for i in range(len(reviewed_trials)):
+                    trial_true_positives = 0
+                    trial_false_positives = 0
+                    trial_true_negatives = 0
+                    trial_false_negatives = 0
+
                     for j in range(len(estimated_missing[i])):
                         if estimated_missing[i][j]:
                             if reviewed_trial_missing[i][j]:
+                                trial_true_positives += 1
                                 true_positives += 1
                             else:
+                                trial_false_positives += 1
                                 false_positives += 1
                         else:
                             if reviewed_trial_missing[i][j]:
+                                trial_false_negatives += 1
                                 false_negatives += 1
                             else:
+                                trial_true_negatives += 1
                                 true_negatives += 1
+
+                    trial_precision = 0
+                    trial_recall = 0
+                    trial_f1 = 0
+                    if trial_true_positives + trial_false_positives != 0:
+                        trial_precision = trial_true_positives / (trial_true_positives + trial_false_positives)
+                        trials_by_precision['addb view '+file + ' --trial ' + str(reviewed_trials[i])] = trial_precision
+                    if trial_true_positives + trial_false_negatives != 0:
+                        trial_recall = trial_true_positives / (trial_true_positives + trial_false_negatives)
+                        trials_by_recall['addb view ' + file + ' --trial ' + str(reviewed_trials[i])] = trial_recall
+                    if trial_precision + trial_recall != 0:
+                        trial_f1 = 2 * trial_precision * trial_recall / (trial_precision + trial_recall)
+                        trials_by_f1['addb view '+file + ' --trial ' + str(reviewed_trials[i])] = trial_f1
+
+                    trials_by_false_negatives['addb view '+file + ' --trial ' + str(reviewed_trials[i])] = trial_false_negatives
+                    trials_by_false_positives['addb view '+file + ' --trial ' + str(reviewed_trials[i])] = trial_false_positives
+
 
                 # Get the lengths of segments of present GRFs
                 for i in range(len(reviewed_trials)):
@@ -118,6 +161,23 @@ class EvaluatePerformance(AbstractCommand):
                 print("Error loading: " + file)
                 print(e)
 
+        # Write sorted log files
+        with open('trials_by_recall.txt', 'w') as f:
+            for key in sorted(trials_by_recall, key=trials_by_recall.get):
+                f.write(key + ' ' + str(trials_by_recall[key]) + '\n')
+        with open('trials_by_precision.txt', 'w') as f:
+            for key in sorted(trials_by_precision, key=trials_by_precision.get):
+                f.write(key + ' ' + str(trials_by_precision[key]) + '\n')
+        with open('trials_by_f1.txt', 'w') as f:
+            for key in sorted(trials_by_f1, key=trials_by_f1.get):
+                f.write(key + ' ' + str(trials_by_f1[key]) + '\n')
+        with open('trials_by_false_negatives.txt', 'w') as f:
+            for key in sorted(trials_by_false_negatives, key=trials_by_false_negatives.get, reverse=True):
+                f.write(key + ' ' + str(trials_by_false_negatives[key]) + '\n')
+        with open('trials_by_false_positives.txt', 'w') as f:
+            for key in sorted(trials_by_false_positives, key=trials_by_false_positives.get, reverse=True):
+                f.write(key + ' ' + str(trials_by_false_positives[key]) + '\n')
+
         # Print statistics
         print("Num trials manually reviewed: " + str(num_trials_manually_reviewed))
         print("Num trials not manually reviewed: " + str(num_trials_not_manually_reviewed))
@@ -126,10 +186,11 @@ class EvaluatePerformance(AbstractCommand):
 
         print('-----')
 
-        print("True Positives (was missing GRF, we predicted it): " + str(true_positives))
-        print("False Positives (had GRF, we predicted it was missing): " + str(false_positives))
-        print("True Negatives (had GRF, we knew it did): " + str(true_negatives))
-        print("False Negatives (had GRF, we predicted it was missing): " + str(false_negatives))
+        total_frames = true_positives + false_positives + true_negatives + false_negatives
+        print("True Positives (correct – missing GRF): " + str(true_positives) + ' - ' + str(true_positives * 100.0 / (total_frames)) + '%')
+        print("False Positives (wrong - had GRF data, but we filtered frame out): " + str(false_positives) + ' - ' + str(false_positives * 100.0 / (total_frames)) + '%')
+        print("True Negatives (correct - had GRF): " + str(true_negatives) + ' - ' + str(true_negatives * 100.0 / (total_frames)) + '%')
+        print("False Negatives (wrong - missing GRF data, but we thought it had it): " + str(false_negatives) + ' - ' + str(false_negatives * 100.0 / (total_frames)) + '%')
 
         print('-----')
 

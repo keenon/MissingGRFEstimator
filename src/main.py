@@ -4,12 +4,21 @@ import nimblephysics_libs.biomechanics
 
 from cli.abstract_command import AbstractCommand
 from cli.evaluate_performance import EvaluatePerformance
+from cli.analyze import Analyze
+from cli.analyze2 import Analyze2
+from cli.analyze3 import Analyze3
+from cli.analyze4 import Analyze4
+from cli.analyze5 import Analyze5
+from cli.analyze6 import Analyze6
+from cli.analyze7 import Analyze7
+from cli.analyze8 import Analyze8
+from cli.view_markers import ViewMarkers
 import nimblephysics as nimble
 import logging
 
 
 def main():
-    commands = [EvaluatePerformance()]
+    commands = [EvaluatePerformance(), Analyze(), Analyze2(), Analyze3(), Analyze4(), Analyze5(), Analyze6(), Analyze7(), Analyze8(), ViewMarkers()]
 
     # Create an ArgumentParser object
     parser = argparse.ArgumentParser(

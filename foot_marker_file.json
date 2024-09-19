@@ -1,0 +1,42 @@
+{
+  "L_HEEL_1": {
+    "mesh_patterns": ["l_foot"],
+    "offset": [-0.01, 0.0, -0.02]
+  },
+  "L_HEEL_2": {
+    "mesh_patterns": ["l_foot"],
+    "offset": [-0.01, 0.0, 0.035]
+  },
+  "L_TOES_1": {
+    "mesh_patterns": ["l_bofoot"],
+    "offset": [0.1, 0.0, 0.03]
+  },
+  "L_TOES_2": {
+    "mesh_patterns": ["l_bofoot"],
+    "offset": [0.07, 0.0, -0.08]
+  },
+  "L_INNER_FOOT": {
+    "mesh_patterns": ["l_bofoot"],
+    "offset": [0.0, 0.0, 0.065]
+  },
+  "R_HEEL_1": {
+    "mesh_patterns": ["r_foot"],
+    "offset": [-0.01, 0.0, -0.02]
+  },
+  "R_HEEL_2": {
+    "mesh_patterns": ["r_foot"],
+    "offset": [-0.01, 0.0, 0.035]
+  },
+  "R_TOES_1": {
+    "mesh_patterns": ["r_bofoot"],
+    "offset": [0.1, 0.0, -0.03]
+  },
+  "R_TOES_2": {
+    "mesh_patterns": ["r_bofoot"],
+    "offset": [0.07, 0.0, 0.08]
+  },
+  "R_INNER_FOOT": {
+    "mesh_patterns": ["r_bofoot"],
+    "offset": [0.0, 0.0, -0.065]
+  }
+}

@@ -1,0 +1,67 @@
+{"patterns": [
+  {
+    "file_pattern": ".*Carter.*",
+    "treadmill": true
+  },
+  {
+    "file_pattern": ".*Camargo.*_split5.b3d",
+    "treadmill": true
+  },
+  {
+    "file_pattern": ".*Camargo.*",
+    "treadmill": false
+  },
+  {
+    "file_pattern": ".*Santos.*",
+    "static": true
+  },
+  {
+    "file_pattern": ".*Tiziana.*",
+    "treadmill": false
+  },
+  {
+    "file_pattern": ".*Hammer.*",
+    "treadmill": true
+  },
+  {
+    "file_pattern": ".*Uhlrich.*",
+    "treadmill": false
+  },
+  {
+    "file_pattern": ".*Fregly2012.*",
+    "treadmill": false
+  },
+  {
+    "file_pattern": ".*Falisse2017.*",
+    "treadmill": false
+  },
+  {
+    "file_pattern": ".*Han2023.*",
+    "treadmill": false
+  },
+  {
+    "file_pattern": ".*Tan2021.*",
+    "trial_ge": 2,
+    "treadmill": true
+  },
+  {
+    "file_pattern": ".*Tan2022.*",
+    "trial_ge": 2,
+    "treadmill": true
+  },
+  {
+    "file_pattern": ".*vanderZee2022.*",
+    "trial_ge": 1,
+    "treadmill": true
+  },
+  {
+    "file_pattern": ".*Moore2015.*",
+    "trial_ge": 2,
+    "treadmill": true
+  },
+  {
+    "file_pattern": ".*Wang2023.*",
+    "trial_ge": 9,
+    "treadmill": true
+  }
+]}

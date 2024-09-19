@@ -1,1 +1,4 @@
 data
+Geometry
+src/*.txt
+src/*.csv
