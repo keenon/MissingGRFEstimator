@@ -3,9 +3,11 @@ import os
 import nimblephysics as nimble
 from detectors.abstract_detector import AbstractDetector
 from detectors.thresholds import ThresholdsDetector
+from detectors.thresholds_preloaded import ThresholdsDetectorPreloaded
 from detectors.zero_grf import ZeroGRFDetector
 import numpy as np
 import random
+import traceback
 
 
 class EvaluatePerformance(AbstractCommand):
@@ -15,7 +17,7 @@ class EvaluatePerformance(AbstractCommand):
     def register_subcommand(self, subparsers):
         subparser = subparsers.add_parser('eval', help='Evaluate the performance of a missing GRF heuristic on the dataset.')
         subparser.add_argument('--dataset-home', type=str, default='../data', help='The path to the AddBiomechanics dataset.')
-        subparser.add_argument('--method', type=str, default='threshold', help='The method to evaluate.')
+        subparser.add_argument('--method', type=str, default='threshold-preloaded', help='The method to evaluate.')
         subparser.add_argument('--foot-marker-file', type=str, default='../foot_marker_file.json', help='The JSON file containing the locations of the markers on the foot.')
         subparser.add_argument('--log-csv', type=str, default='../eval.csv', help='The file to log output to.')
 
@@ -30,6 +32,8 @@ class EvaluatePerformance(AbstractCommand):
         detector = AbstractDetector()
         if method == 'threshold':
             detector = ThresholdsDetector(foot_marker_file)
+        if method == 'threshold-preloaded':
+            detector = ThresholdsDetectorPreloaded(foot_marker_file)
 
         data_dir = os.path.abspath('../data/processed')
 
@@ -160,6 +164,7 @@ class EvaluatePerformance(AbstractCommand):
             except Exception as e:
                 print("Error loading: " + file)
                 print(e)
+                traceback.print_exc()
 
         # Write sorted log files
         with open('trials_by_recall.txt', 'w') as f:
