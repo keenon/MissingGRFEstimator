@@ -18,7 +18,7 @@ class GRFAnalyze1(AbstractCommand):
         dataset_home: str = args.dataset_home
         print(f"Running evaluation on {dataset_home}")
 
-        data_dir = os.path.abspath('../data/smoothed')
+        data_dir = os.path.abspath('../data/smoothed_dynamics')
 
         # Recursively list all the B3D files under data
         b3d_files = []

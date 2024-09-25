@@ -21,12 +21,45 @@ from cli.grf_analyze6 import GRFAnalyze6
 from cli.grf_analyze7 import GRFAnalyze7
 from cli.grf_analyze8 import GRFAnalyze8
 from cli.view_markers import ViewMarkers
-import nimblephysics as nimble
-import logging
+from cli.exo_analyze1 import ExoAnalyze1
+from cli.exo_analyze2 import ExoAnalyze2
+from cli.imu_analyze1 import IMUAnalyze1
+from cli.imu_analyze2 import IMUAnalyze2
+from cli.imu_analyze3 import IMUAnalyze3
+from cli.imu_analyze4 import IMUAnalyze4
+from cli.imu_analyze5 import IMUAnalyze5
+from cli.imu_analyze6 import IMUAnalyze6
 
 
 def main():
-    commands = [EvaluatePerformance(), Analyze(), Analyze2(), Analyze3(), Analyze4(), Analyze5(), Analyze6(), Analyze7(), Analyze8(), ViewMarkers(), GRFAnalyze1(), GRFAnalyze2(), GRFAnalyze3(), GRFAnalyze4(), GRFAnalyze5(), GRFAnalyze6(), GRFAnalyze7(), GRFAnalyze8()]
+    commands = [
+        EvaluatePerformance(),
+        Analyze(),
+        Analyze2(),
+        Analyze3(),
+        Analyze4(),
+        Analyze5(),
+        Analyze6(),
+        Analyze7(),
+        Analyze8(),
+        ViewMarkers(),
+        GRFAnalyze1(),
+        GRFAnalyze2(),
+        GRFAnalyze3(),
+        GRFAnalyze4(),
+        GRFAnalyze5(),
+        GRFAnalyze6(),
+        GRFAnalyze7(),
+        GRFAnalyze8(),
+        ExoAnalyze1(),
+        ExoAnalyze2(),
+        IMUAnalyze1(),
+        IMUAnalyze2(),
+        IMUAnalyze3(),
+        IMUAnalyze4(),
+        IMUAnalyze5(),
+        IMUAnalyze6()
+    ]
 
     # Create an ArgumentParser object
     parser = argparse.ArgumentParser(
