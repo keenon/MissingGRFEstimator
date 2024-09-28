@@ -45,8 +45,8 @@ class EvaluatePerformance(AbstractCommand):
                     path = os.path.join(root, file)
                     # if 'Camargo' in path:
                     b3d_files.append(path)
-        # random.shuffle(b3d_files)
-        # b3d_files = b3d_files[:30]
+        random.shuffle(b3d_files)
+        b3d_files = b3d_files[:30]
 
         # Load all the B3D files, and collect statistics for each trial
 

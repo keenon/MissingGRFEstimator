@@ -170,7 +170,8 @@ class ThresholdsDetectorPreloaded(AbstractDetector):
                                                  foot_markers: List[List[Tuple[nimble.dynamics.BodyNode, np.ndarray]]],
                                                  positions: np.ndarray,
                                                  raw_force_plate_forces: List[List[np.ndarray]],
-                                                 raw_force_plate_cops: List[List[np.ndarray]]) -> float:
+                                                 raw_force_plate_cops: List[List[np.ndarray]],
+                                                 dt: float) -> float:
         """
         Get the force-weighted convex foot CoP error for the given skeleton, foot markers, positions, and frames.
 
@@ -216,7 +217,7 @@ class ThresholdsDetectorPreloaded(AbstractDetector):
                         contact_forces[f] += force_mag
                 else:
                     if last_in_contact[f]:
-                        if contact_forces[f] > 100.0:
+                        if contact_forces[f] * dt > 10.0:
                             weighted_average_distances = [contact_distances[f][body] / contact_forces[f] for body in
                                                           range(num_contact_bodies)]
                             min_weighted_distance = min(weighted_average_distances)
@@ -230,7 +231,7 @@ class ThresholdsDetectorPreloaded(AbstractDetector):
                     last_in_contact[f] = False
         for f in range(num_force_plates):
             if last_in_contact[f]:
-                if contact_forces[f] > 100.0:
+                if contact_forces[f] * dt > 10.0:
                     weighted_average_distances = [contact_distances[f][body] / contact_forces[f] for body in
                                                   range(num_contact_bodies)]
                     min_weighted_distance = min(weighted_average_distances)
@@ -375,7 +376,7 @@ class ThresholdsDetectorPreloaded(AbstractDetector):
                 continue
 
             # 4. Check for outlying CoP values
-            if self.get_force_weighted_convex_foot_cop_error(skel, foot_markers, poses, raw_force_plate_forces, raw_force_plate_cops) > 0.01:
+            if self.get_force_weighted_convex_foot_cop_error(skel, foot_markers, poses, raw_force_plate_forces, raw_force_plate_cops, dt) > 0.01:
                 result.append([True] * trial_len)
                 continue
 
